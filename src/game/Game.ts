@@ -8,6 +8,7 @@ import { Passenger } from "../objects/Passenger";
 import { Minimap } from "./Minimap";
 import { GameState } from "./GameState";
 import { GameUI } from "./GameUI";
+import { ShopUI } from "../shop/ShopUI";
 
 export class Game {
   private scene: Scene;
@@ -22,6 +23,7 @@ export class Game {
   private minimap: Minimap;
   private gameState: GameState;
   private gameUI: GameUI;
+  private shopUI: ShopUI;
 
   constructor() {
     const canvas = document.querySelector("canvas.webgl") as HTMLCanvasElement;
@@ -42,15 +44,17 @@ export class Game {
     this.minimap = new Minimap(this.scene.getInstance());
     this.gameState = new GameState();
     this.gameUI = new GameUI();
+    this.shopUI = new ShopUI(() => {
+      this.startGame();
+    });
   }
 
   public init(): void {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    // 🔥 추가: 물리적으로 정확한 조명 설정
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2; // 🔥 밝기 조정
+    this.renderer.toneMappingExposure = 1.2;
 
     // Scene에 객체들 추가
     this.scene.getInstance().add(this.city.getGroup());
@@ -59,34 +63,48 @@ export class Game {
     // Post-processing 설정
     this.scene.setupPostProcessing(this.renderer, this.camera.getInstance());
 
+    // 초기 카메라 위치 설정
+    const taxiPosition = this.taxi.getObject().position;
+    this.camera
+      .getInstance()
+      .position.set(taxiPosition.x, taxiPosition.y + 30, taxiPosition.z + 30);
+    this.camera.getInstance().lookAt(taxiPosition);
+
     // 게임 설명 추가
     this.addGameInstructions();
 
+    // 애니메이션 루프 시작 (게임 배경 렌더링)
+    this.animate();
+
+    // 윈도우 리사이즈 이벤트 처리
+    window.addEventListener("resize", () => this.onWindowResize());
+  }
+
+  private onWindowResize(): void {
+    this.camera.getInstance().aspect = window.innerWidth / window.innerHeight;
+    this.camera.getInstance().updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  private startGame(): void {
     // 첫 승객 생성 및 미션 시작
     this.spawnNewPassenger();
     this.gameState.startMission();
     this.gameUI.updateTimer(this.gameState.getRemainingTime());
-
-    // 윈도우 리사이즈 이벤트 처리
-    window.addEventListener("resize", () => this.onWindowResize());
-
-    // 애니메이션 루프 시작
-    requestAnimationFrame(() => this.animate());
-  }
-
-  private onWindowResize(): void {
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
   private spawnNewPassenger(): void {
     if (this.currentPassenger) {
       // 기존 승객과 목적지 마커 제거
-      this.scene
-        .getInstance()
-        .remove(this.currentPassenger.getPassengerObject());
-      this.scene
-        .getInstance()
-        .remove(this.currentPassenger.getDestinationObject());
+      if (this.hasPassenger) {
+        this.scene
+          .getInstance()
+          .remove(this.currentPassenger.getDestinationObject());
+      } else {
+        this.scene
+          .getInstance()
+          .remove(this.currentPassenger.getPassengerObject());
+      }
     }
 
     this.currentPassenger = new Passenger(this.citySize);
@@ -116,6 +134,9 @@ export class Game {
   private animate(): void {
     requestAnimationFrame(() => this.animate());
 
+    // 씬 렌더링
+    this.scene.getComposer().render();
+
     // 게임 상태 업데이트
     this.gameState.update();
 
@@ -144,7 +165,7 @@ export class Game {
       this.gameUI.showMessage(message, "failure");
 
       setTimeout(() => {
-        this.gameState.resetGame(); // 🔥 게임을 다시 시작
+        this.gameState.resetGame(); // 게임을 다시 시작
         this.spawnNewPassenger(); // 새로운 승객 생성
       }, 2000);
 
@@ -176,7 +197,6 @@ export class Game {
         : undefined
     );
 
-    // 목적지 도착 체크
     if (
       this.hasPassenger &&
       this.currentPassenger.isNearDestination(taxiPosition)
@@ -185,7 +205,5 @@ export class Game {
       this.gameState.endMission(true);
       this.spawnNewPassenger();
     }
-
-    this.scene.getComposer().render();
   }
 }
