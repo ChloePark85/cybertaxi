@@ -59,13 +59,13 @@ export class City {
   private createGround(): void {
     const geometry = new THREE.PlaneGeometry(this.citySize, this.citySize);
     const material = new THREE.MeshStandardMaterial({
-      color: 0x8888aa, // 🔥 기존보다 밝은 색상 (파스텔 계열 회색-푸른색)
-      roughness: 0.5,
-      metalness: 0.1,
+      color: 0xcccccc, // 🔥 기존보다 더 밝은 회색
+      roughness: 0.2, // 🔥 반사광 증가
+      metalness: 0.3, // 🔥 금속성 추가하여 조명 반사 증가
     });
     const ground = new THREE.Mesh(geometry, material);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.1; // 🔥 도로와 겹치지 않도록 조금 아래로 배치
+    ground.position.y = -0.05; // 🔥 도로와 겹치지 않도록 조정
     this.cityGroup.add(ground);
   }
 }

@@ -47,8 +47,10 @@ export class Game {
   public init(): void {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // 🔥 추가: 물리적으로 정확한 조명 설정
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.2; // 🔥 밝기 조정
 
     // Scene에 객체들 추가
     this.scene.getInstance().add(this.city.getGroup());

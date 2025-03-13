@@ -12,13 +12,19 @@ export class Scene {
     this.scene.background = new THREE.Color(0x3a3a5e);
     this.scene.fog = new THREE.Fog(0x1a1a2e, 100, 700);
 
-    // 조명 강화
-    const ambientLight = new THREE.AmbientLight(0x404040);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    directionalLight.position.set(100, 100, 100);
+    // 기존 조명 강화
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); // 🔥 전체 밝기 증가
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5); // 🔥 밝기 증가
+    directionalLight.position.set(100, 200, 100);
+    directionalLight.castShadow = true; // 🔥 그림자 활성화 (시각적 효과 개선)
+
+    // 새로운 광원 추가
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xaaaaaa, 1.8); // 🔥 하늘과 땅 조명 추가
+    hemiLight.position.set(0, 300, 0);
 
     this.scene.add(ambientLight);
     this.scene.add(directionalLight);
+    this.scene.add(hemiLight);
   }
 
   public setupPostProcessing(
@@ -34,9 +40,9 @@ export class Scene {
     // 네온 효과를 위한 블룸 패스
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      1.2, // 🔥 강도를 기존 1.5 → 1.2로 낮춤
-      0.6, // 🔥 반경 증가
-      0.9 // 🔥 임계값 증가
+      0.7, // 🔥 강도를 기존 1.2 → 0.7로 낮춤
+      0.5, // 🔥 반경 감소
+      1.0 // 🔥 임계값 증가
     );
     this.composer.addPass(bloomPass);
   }
