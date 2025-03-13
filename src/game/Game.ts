@@ -6,6 +6,8 @@ import { Taxi } from "../objects/Taxi";
 import { Controls } from "./Controls";
 import { Passenger } from "../objects/Passenger";
 import { Minimap } from "./Minimap";
+import { GameState } from "./GameState";
+import { GameUI } from "./GameUI";
 
 export class Game {
   private scene: Scene;
@@ -18,6 +20,8 @@ export class Game {
   private hasPassenger: boolean = false;
   private citySize: number = 1000; // City 클래스의 citySize와 동일하게 설정
   private minimap: Minimap;
+  private gameState: GameState;
+  private gameUI: GameUI;
 
   constructor() {
     const canvas = document.querySelector("canvas.webgl") as HTMLCanvasElement;
@@ -35,34 +39,37 @@ export class Game {
     this.city = new City();
     this.taxi = new Taxi();
     this.controls = new Controls();
-    this.scene.getInstance().add(this.city.getGroup());
-    this.scene.getInstance().add(this.taxi.getObject());
-
-    // 카메라 초기 위치를 더 높게 조정
-    this.camera.getInstance().position.set(0, 50, 50);
-    this.camera.getInstance().lookAt(0, 0, 0);
-
     this.minimap = new Minimap(this.scene.getInstance());
-    this.spawnNewPassenger();
-
-    // 게임 설명 추가
-    this.addGameInstructions();
+    this.gameState = new GameState();
+    this.gameUI = new GameUI();
   }
 
   public init(): void {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    // Three.js r137 이후 변경된 인코딩 설정
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
+    // Scene에 객체들 추가
+    this.scene.getInstance().add(this.city.getGroup());
+    this.scene.getInstance().add(this.taxi.getObject());
+
+    // Post-processing 설정
     this.scene.setupPostProcessing(this.renderer, this.camera.getInstance());
+
+    // 게임 설명 추가
+    this.addGameInstructions();
+
+    // 게임 시작 - UI 초기화 후 첫 미션 시작
+    this.gameUI.updateTimer(this.gameState.getRemainingTime()); // 초기 시간 표시
+    this.gameState.startMission();
+    this.spawnNewPassenger();
 
     // 윈도우 리사이즈 이벤트 처리
     window.addEventListener("resize", () => this.onWindowResize());
 
-    this.animate();
+    // 애니메이션 루프 시작
+    requestAnimationFrame(() => this.animate());
   }
 
   private onWindowResize(): void {
@@ -94,6 +101,7 @@ export class Game {
     instructions.style.color = "white";
     instructions.style.padding = "10px";
     instructions.style.borderRadius = "5px";
+    instructions.style.zIndex = "999";
     instructions.innerHTML = `
         <h3>택시 게임</h3>
         <p>🟢 초록색 기둥: 승객</p>
@@ -106,56 +114,42 @@ export class Game {
   private animate(): void {
     requestAnimationFrame(() => this.animate());
 
+    // 게임 상태 업데이트
+    this.gameState.update();
+
+    // UI 업데이트를 먼저 수행
+    this.gameUI.updateScore(this.gameState.getScore());
+    this.gameUI.updateTimer(this.gameState.getRemainingTime());
+
     // 택시 업데이트
     this.taxi.update(this.controls.getControls());
 
-    // 승객 관리
-    if (this.currentPassenger) {
-      const taxiPosition = this.taxi.getObject().position;
+    // 카메라 위치 조정
+    const taxiPosition = this.taxi.getObject().position;
+    this.camera
+      .getInstance()
+      .position.set(taxiPosition.x, taxiPosition.y + 30, taxiPosition.z + 30);
+    this.camera.getInstance().lookAt(taxiPosition);
 
+    if (this.currentPassenger) {
+      // 승객 탑승 체크
       if (
         !this.hasPassenger &&
         this.currentPassenger.isNearPassenger(taxiPosition)
       ) {
-        // 승객 탑승
         this.hasPassenger = true;
+        // 승객 오브젝트 제거
         this.scene
           .getInstance()
           .remove(this.currentPassenger.getPassengerObject());
+        // 목적지 마커 추가
         this.scene
           .getInstance()
           .add(this.currentPassenger.getDestinationObject());
-        console.log("승객이 탑승했습니다!");
-
-        // 디버그용 로그 추가
-        console.log("택시 위치:", taxiPosition);
-        console.log(
-          "승객과의 거리:",
-          taxiPosition.distanceTo(
-            this.currentPassenger.getPassengerObject().position
-          )
-        );
-      } else if (
-        this.hasPassenger &&
-        this.currentPassenger.isNearDestination(taxiPosition)
-      ) {
-        // 목적지 도착
-        console.log("목적지에 도착했습니다!");
-        this.spawnNewPassenger();
+        this.gameUI.showMessage("승객 탑승!", "success");
       }
-    }
 
-    // 카메라 위치 조정
-    const taxiPosition = this.taxi.getObject().position;
-    this.camera.getInstance().position.set(
-      taxiPosition.x,
-      taxiPosition.y + 30, // 높이 조정
-      taxiPosition.z + 30 // 거리 조정
-    );
-    this.camera.getInstance().lookAt(taxiPosition);
-
-    // 미니맵 업데이트 추가
-    if (this.currentPassenger) {
+      // 미니맵 업데이트
       this.minimap.update(
         taxiPosition,
         this.hasPassenger ? undefined : this.currentPassenger.getPosition(),
@@ -163,6 +157,23 @@ export class Game {
           ? this.currentPassenger.getDestinationPosition()
           : undefined
       );
+
+      // 목적지 도착 체크
+      if (
+        this.hasPassenger &&
+        this.currentPassenger.isNearDestination(taxiPosition)
+      ) {
+        this.gameUI.showMessage("MISSION SUCCESS!", "success");
+        this.gameState.endMission(true);
+        this.spawnNewPassenger();
+      }
+
+      // 시간 초과 체크
+      if (this.gameState.isMissionFailed()) {
+        this.gameUI.showMessage("TIME OVER!", "failure");
+        this.gameState.endMission(false);
+        this.spawnNewPassenger();
+      }
     }
 
     this.scene.getComposer().render();
