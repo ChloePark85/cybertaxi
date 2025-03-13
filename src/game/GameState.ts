@@ -3,7 +3,7 @@ export class GameState {
   private timeLimit: number = 60; // 60초
   private currentTime: number = 0;
   private missionStartTime: number = 0;
-  private isMissionActive: boolean = false;
+  public isMissionActive: boolean = false;
 
   constructor() {}
 
@@ -26,14 +26,25 @@ export class GameState {
     }
 
     this.isMissionActive = false;
-    this.startMission();
+
+    // 2초 후 게임 재시작
+    setTimeout(() => {
+      this.resetGame();
+    }, 2000);
+  }
+
+  public resetGame(): void {
+    // 🔥 새로 추가
+    this.currentTime = 0;
+    this.missionStartTime = Date.now();
+    this.isMissionActive = true;
   }
 
   public update(): void {
     if (this.isMissionActive) {
       this.currentTime = (Date.now() - this.missionStartTime) / 1000;
       if (this.currentTime >= this.timeLimit) {
-        this.endMission(false); // 시간 초과
+        this.isMissionActive = false;
       }
     }
   }

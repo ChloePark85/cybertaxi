@@ -33,13 +33,14 @@ export class GameUI {
 
   private createScoreElement(): HTMLDivElement {
     const element = document.createElement("div");
-    element.style.position = "absolute";
+    element.style.position = "fixed";
     element.style.left = "20px";
     element.style.bottom = "20px";
     element.style.color = "#00ff00";
-    element.style.fontSize = "24px";
+    element.style.fontSize = "28px";
     element.style.textShadow = "0 0 10px #00ff00";
     element.style.zIndex = "1001";
+    element.style.fontFamily = "'Press Start 2P', system-ui, sans-serif";
     return element;
   }
 
@@ -58,16 +59,17 @@ export class GameUI {
 
   private createMessageElement(): HTMLDivElement {
     const element = document.createElement("div");
-    element.style.position = "absolute";
+    element.style.position = "fixed";
     element.style.left = "50%";
     element.style.top = "30%";
     element.style.transform = "translate(-50%, -50%)";
     element.style.color = "#ffffff";
-    element.style.fontSize = "32px";
+    element.style.fontSize = "36px";
     element.style.textAlign = "center";
     element.style.opacity = "0";
     element.style.transition = "opacity 0.3s ease";
     element.style.zIndex = "1002";
+    element.style.fontFamily = "'Press Start 2P', system-ui, sans-serif";
     return element;
   }
 
@@ -85,7 +87,7 @@ export class GameUI {
 
   public updateTimer(time: number): void {
     const timeStr = Math.ceil(time).toString().padStart(2, "0");
-    this.timerElement.textContent = `남은 시간: ${timeStr}초`;
+    this.timerElement.textContent = `TIME: ${timeStr}`;
 
     // 10초 이하면 빨간색으로 변경
     if (time <= 10) {
@@ -98,7 +100,14 @@ export class GameUI {
   }
 
   public showMessage(message: string, type: "success" | "failure"): void {
-    this.messageElement.textContent = message;
+    const messages = {
+      success: "MISSION SUCCESS!",
+      failure:
+        message === "DESTINATION NOT REACHED!"
+          ? "DESTINATION NOT REACHED!"
+          : "TIME OVER!",
+    };
+    this.messageElement.textContent = messages[type];
     this.messageElement.style.color =
       type === "success" ? "#00ff00" : "#ff0000";
     this.messageElement.style.textShadow = `0 0 10px ${

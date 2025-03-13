@@ -11,15 +11,17 @@ export class City {
   }
 
   private generateCity(): void {
-    // 도로 생성
+    // 도로 생성 (기존 0x111111에서 밝은 회색으로 변경)
     const roadGeometry = new THREE.PlaneGeometry(this.citySize, this.citySize);
     const roadMaterial = new THREE.MeshStandardMaterial({
-      color: 0x111111,
-      roughness: 0.8,
+      color: 0x555555, // 🔥 밝은 회색으로 변경
+      roughness: 0.6,
     });
     const road = new THREE.Mesh(roadGeometry, roadMaterial);
     road.rotation.x = -Math.PI / 2;
     this.cityGroup.add(road);
+
+    this.createGround(); // 🔥 바닥 생성 함수 호출 추가
 
     // 빌딩 생성
     for (let i = 0; i < this.buildingCount; i++) {
@@ -52,5 +54,18 @@ export class City {
 
   public getGroup(): THREE.Group {
     return this.cityGroup;
+  }
+
+  private createGround(): void {
+    const geometry = new THREE.PlaneGeometry(this.citySize, this.citySize);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x8888aa, // 🔥 기존보다 밝은 색상 (파스텔 계열 회색-푸른색)
+      roughness: 0.5,
+      metalness: 0.1,
+    });
+    const ground = new THREE.Mesh(geometry, material);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.1; // 🔥 도로와 겹치지 않도록 조금 아래로 배치
+    this.cityGroup.add(ground);
   }
 }

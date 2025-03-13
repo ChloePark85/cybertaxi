@@ -9,7 +9,8 @@ export class Scene {
 
   constructor() {
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x000000, 0.0015);
+    this.scene.background = new THREE.Color(0x3a3a5e);
+    this.scene.fog = new THREE.Fog(0x1a1a2e, 100, 700);
 
     // 조명 강화
     const ambientLight = new THREE.AmbientLight(0x404040);
@@ -33,9 +34,9 @@ export class Scene {
     // 네온 효과를 위한 블룸 패스
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      1.5, // 강도
-      0.4, // 반경
-      0.85 // 임계값
+      1.2, // 🔥 강도를 기존 1.5 → 1.2로 낮춤
+      0.6, // 🔥 반경 증가
+      0.9 // 🔥 임계값 증가
     );
     this.composer.addPass(bloomPass);
   }

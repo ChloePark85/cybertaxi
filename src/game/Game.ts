@@ -60,10 +60,10 @@ export class Game {
     // 게임 설명 추가
     this.addGameInstructions();
 
-    // 게임 시작 - UI 초기화 후 첫 미션 시작
-    this.gameUI.updateTimer(this.gameState.getRemainingTime()); // 초기 시간 표시
-    this.gameState.startMission();
+    // 첫 승객 생성 및 미션 시작
     this.spawnNewPassenger();
+    this.gameState.startMission();
+    this.gameUI.updateTimer(this.gameState.getRemainingTime());
 
     // 윈도우 리사이즈 이벤트 처리
     window.addEventListener("resize", () => this.onWindowResize());
@@ -103,10 +103,10 @@ export class Game {
     instructions.style.borderRadius = "5px";
     instructions.style.zIndex = "999";
     instructions.innerHTML = `
-        <h3>택시 게임</h3>
-        <p>🟢 초록색 기둥: 승객</p>
-        <p>🔴 빨간색 화살표: 목적지</p>
-        <p>승객을 태우고 목적지까지 운전하세요!</p>
+        <h3>CYBER TAXI</h3>
+        <p>🟢 GREEN PILLAR: PASSENGER</p>
+        <p>🔴 RED ARROW: DESTINATION</p>
+        <p>PICK UP PASSENGER AND DRIVE TO DESTINATION!</p>
     `;
     document.body.appendChild(instructions);
   }
@@ -131,49 +131,57 @@ export class Game {
       .position.set(taxiPosition.x, taxiPosition.y + 30, taxiPosition.z + 30);
     this.camera.getInstance().lookAt(taxiPosition);
 
-    if (this.currentPassenger) {
-      // 승객 탑승 체크
-      if (
-        !this.hasPassenger &&
-        this.currentPassenger.isNearPassenger(taxiPosition)
-      ) {
-        this.hasPassenger = true;
-        // 승객 오브젝트 제거
-        this.scene
-          .getInstance()
-          .remove(this.currentPassenger.getPassengerObject());
-        // 목적지 마커 추가
-        this.scene
-          .getInstance()
-          .add(this.currentPassenger.getDestinationObject());
-        this.gameUI.showMessage("승객 탑승!", "success");
-      }
+    if (!this.currentPassenger) return;
 
-      // 미니맵 업데이트
-      this.minimap.update(
-        taxiPosition,
-        this.hasPassenger ? undefined : this.currentPassenger.getPosition(),
-        this.hasPassenger
-          ? this.currentPassenger.getDestinationPosition()
-          : undefined
-      );
+    // 시간 초과 체크
+    if (this.gameState.isMissionFailed() && !this.gameState.isMissionActive) {
+      // 승객을 태웠는지 여부에 따라 다른 메시지 표시
+      const message = this.hasPassenger
+        ? "DESTINATION NOT REACHED!"
+        : "TIME OVER!";
+      this.gameUI.showMessage(message, "failure");
 
-      // 목적지 도착 체크
-      if (
-        this.hasPassenger &&
-        this.currentPassenger.isNearDestination(taxiPosition)
-      ) {
-        this.gameUI.showMessage("MISSION SUCCESS!", "success");
-        this.gameState.endMission(true);
-        this.spawnNewPassenger();
-      }
+      setTimeout(() => {
+        this.gameState.resetGame(); // 🔥 게임을 다시 시작
+        this.spawnNewPassenger(); // 새로운 승객 생성
+      }, 2000);
 
-      // 시간 초과 체크
-      if (this.gameState.isMissionFailed()) {
-        this.gameUI.showMessage("TIME OVER!", "failure");
-        this.gameState.endMission(false);
-        this.spawnNewPassenger();
-      }
+      return;
+    }
+
+    if (
+      !this.hasPassenger &&
+      this.currentPassenger.isNearPassenger(taxiPosition)
+    ) {
+      this.hasPassenger = true;
+      // 승객 오브젝트 제거
+      this.scene
+        .getInstance()
+        .remove(this.currentPassenger.getPassengerObject());
+      // 목적지 마커 추가
+      this.scene
+        .getInstance()
+        .add(this.currentPassenger.getDestinationObject());
+      this.gameUI.showMessage("PASSENGER ON!", "success");
+    }
+
+    // 미니맵 업데이트
+    this.minimap.update(
+      taxiPosition,
+      this.hasPassenger ? undefined : this.currentPassenger.getPosition(),
+      this.hasPassenger
+        ? this.currentPassenger.getDestinationPosition()
+        : undefined
+    );
+
+    // 목적지 도착 체크
+    if (
+      this.hasPassenger &&
+      this.currentPassenger.isNearDestination(taxiPosition)
+    ) {
+      this.gameUI.showMessage("MISSION SUCCESS!", "success");
+      this.gameState.endMission(true);
+      this.spawnNewPassenger();
     }
 
     this.scene.getComposer().render();
