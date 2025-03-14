@@ -35,7 +35,7 @@ export class ShopUI {
         <button id="free-taxi-btn" style="padding: 20px; background: #4CAF50; border: none; color: white; border-radius: 5px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
           🚖 BASIC TAXI<br>FREE
         </button>
-        <button onclick="window.location.href='https://buy.stripe.com/test_YYYY'" style="padding: 20px; background: #2196F3; border: none; color: white; border-radius: 5px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <button id="premium-taxi-btn" style="padding: 20px; background: #2196F3; border: none; color: white; border-radius: 5px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
           🏎️ PREMIUM TAXI<br>$9.99
         </button>
       </div>
@@ -51,6 +51,20 @@ export class ShopUI {
       freeButton.addEventListener("click", () => {
         this.hide();
         this.onStartGame();
+      });
+    }
+
+    // 프리미엄 택시 버튼 이벤트 리스너
+    const premiumButton = document.getElementById("premium-taxi-btn");
+    if (premiumButton) {
+      premiumButton.addEventListener("click", () => {
+        // Stripe 결제 페이지로 이동
+        window.location.href = "https://buy.stripe.com/test_28o5kO0Wd0Hl0Za5kk";
+
+        // 실제 구현에서는 아래와 같이 결제 성공 후 콜백을 처리해야 합니다
+        // 1. 결제 성공 시 리디렉션 URL에 성공 파라미터 추가
+        // 2. 리디렉션 후 로컬 스토리지에 프리미엄 구매 정보 저장
+        // 3. 프리미엄 택시로 게임 시작
       });
     }
   }
