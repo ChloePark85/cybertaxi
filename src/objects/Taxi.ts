@@ -7,6 +7,7 @@ export class Taxi {
   private acceleration: number = 0.05;
   private deceleration: number = 0.03;
   private rotationSpeed: number = 0.03;
+  private speedMultiplier: number = 1.0;
 
   constructor() {
     this.taxi = new THREE.Group();
@@ -65,9 +66,9 @@ export class Taxi {
   }): void {
     // 전진/후진
     if (controls.forward && this.speed < this.maxSpeed) {
-      this.speed += this.acceleration;
+      this.speed += this.acceleration * this.speedMultiplier;
     } else if (controls.backward && this.speed > -this.maxSpeed) {
-      this.speed -= this.acceleration;
+      this.speed -= this.acceleration * this.speedMultiplier;
     } else {
       // 감속
       if (Math.abs(this.speed) > 0) {
@@ -97,5 +98,27 @@ export class Taxi {
 
   public getObject(): THREE.Group {
     return this.taxi;
+  }
+
+  public setSpeedMultiplier(multiplier: number): void {
+    this.speedMultiplier = multiplier;
+    this.maxSpeed = 2 * multiplier;
+
+    // 프리미엄 택시는 색상 변경 (선택사항)
+    if (multiplier > 1) {
+      // 택시 본체 색상 변경
+      const body = this.taxi.children[0] as THREE.Mesh;
+      const bodyMaterial = body.material as THREE.MeshStandardMaterial;
+      bodyMaterial.color.set(0x00ffff); // 시안색으로 변경
+      bodyMaterial.emissive.set(0x004444); // 네온 효과 강화
+      bodyMaterial.emissiveIntensity = 1.5;
+
+      // 지붕 표시등 색상 변경
+      const light = this.taxi.children[1] as THREE.Mesh;
+      const lightMaterial = light.material as THREE.MeshStandardMaterial;
+      lightMaterial.color.set(0xff00ff); // 핑크색으로 변경
+      lightMaterial.emissive.set(0xff00ff);
+      lightMaterial.emissiveIntensity = 2.5;
+    }
   }
 }

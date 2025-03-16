@@ -24,6 +24,7 @@ export class Game {
   private gameState: GameState;
   private gameUI: GameUI;
   private shopUI: ShopUI;
+  private isPremiumMode: boolean = false;
 
   constructor() {
     const canvas = document.querySelector("canvas.webgl") as HTMLCanvasElement;
@@ -44,7 +45,8 @@ export class Game {
     this.minimap = new Minimap(this.scene.getInstance());
     this.gameState = new GameState();
     this.gameUI = new GameUI();
-    this.shopUI = new ShopUI(() => {
+    this.shopUI = new ShopUI((isPremium: boolean) => {
+      this.isPremiumMode = isPremium;
       this.startGame();
     });
   }
@@ -87,6 +89,19 @@ export class Game {
   }
 
   private startGame(): void {
+    // 프리미엄 모드에 따라 택시 속도 설정
+    if (this.isPremiumMode) {
+      this.taxi.setSpeedMultiplier(2.0); // 2배 빠른 속도
+      this.gameUI.showPremiumStatus(true); // 프리미엄 상태 표시
+
+      // 메시지 표시 (타이밍 조정)
+      setTimeout(() => {
+        this.gameUI.showMessage("PREMIUM TAXI ACTIVATED!", "success");
+      }, 500);
+    } else {
+      this.gameUI.showPremiumStatus(false);
+    }
+
     // 첫 승객 생성 및 미션 시작
     this.spawnNewPassenger();
     this.gameState.startMission();

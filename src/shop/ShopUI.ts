@@ -1,10 +1,36 @@
 export class ShopUI {
   private container: HTMLDivElement;
-  private onStartGame: () => void;
+  private onStartGame: (isPremium: boolean) => void;
+  private isPremium: boolean = false;
 
-  constructor(onStartGame: () => void) {
+  constructor(onStartGame: (isPremium: boolean) => void) {
     this.container = document.createElement("div");
     this.onStartGame = onStartGame;
+
+    // 개발 환경에서 테스트 모드 활성화 (배포 시 제거)
+    const isTestMode = true; // 테스트 시 true로 설정
+
+    if (isTestMode) {
+      this.isPremium = true;
+    } else {
+      // 기존 코드 (URL 파라미터 및 로컬 스토리지 확인)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("payment_success") === "true") {
+        this.isPremium = true;
+        // URL에서 파라미터 제거 (히스토리 유지)
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+        // 로컬 스토리지에 프리미엄 상태 저장
+        localStorage.setItem("cybertaxi_premium", "true");
+      } else {
+        // 이전에 결제한 적이 있는지 확인
+        this.isPremium = localStorage.getItem("cybertaxi_premium") === "true";
+      }
+    }
+
     this.showWelcomeScreen();
   }
 
@@ -28,16 +54,29 @@ export class ShopUI {
     this.container.style.backdropFilter = "blur(5px)";
     (this.container.style as any)["-webkit-backdrop-filter"] = "blur(5px)";
 
-    const content = `
+    let content = `
       <h1 style="color: #4CAF50; margin-bottom: 40px; font-size: 32px; text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);">CYBER TAXI</h1>
       <p style="color: white; margin-bottom: 20px;">Choose your taxi to start driving</p>
       <div style="display: flex; gap: 20px; margin-bottom: 30px;">
         <button id="free-taxi-btn" style="padding: 20px; background: #4CAF50; border: none; color: white; border-radius: 5px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
           🚖 BASIC TAXI<br>FREE
-        </button>
+        </button>`;
+
+    // 프리미엄 상태에 따라 버튼 변경
+    if (this.isPremium) {
+      content += `
+        <button id="premium-taxi-btn" style="padding: 20px; background: #2196F3; border: none; color: white; border-radius: 5px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 0 10px rgba(33, 150, 243, 0.3); position: relative;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+          🏎️ PREMIUM TAXI<br>PURCHASED
+          <span style="position: absolute; top: -10px; right: -10px; background: #ff0066; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 12px;">✓</span>
+        </button>`;
+    } else {
+      content += `
         <button id="premium-taxi-btn" style="padding: 20px; background: #2196F3; border: none; color: white; border-radius: 5px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
           🏎️ PREMIUM TAXI<br>$9.99
-        </button>
+        </button>`;
+    }
+
+    content += `
       </div>
       <p style="color: #888; font-size: 12px; text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);">Premium taxi runs 2x faster!</p>
     `;
@@ -45,12 +84,12 @@ export class ShopUI {
     this.container.innerHTML = content;
     document.body.appendChild(this.container);
 
-    // 직접 DOM 요소를 찾아서 이벤트 리스너 추가
+    // 무료 택시 버튼 이벤트 리스너
     const freeButton = document.getElementById("free-taxi-btn");
     if (freeButton) {
       freeButton.addEventListener("click", () => {
         this.hide();
-        this.onStartGame();
+        this.onStartGame(false); // 일반 택시로 시작
       });
     }
 
@@ -58,13 +97,20 @@ export class ShopUI {
     const premiumButton = document.getElementById("premium-taxi-btn");
     if (premiumButton) {
       premiumButton.addEventListener("click", () => {
-        // Stripe 결제 페이지로 이동
-        window.location.href = "https://buy.stripe.com/test_28o5kO0Wd0Hl0Za5kk";
-
-        // 실제 구현에서는 아래와 같이 결제 성공 후 콜백을 처리해야 합니다
-        // 1. 결제 성공 시 리디렉션 URL에 성공 파라미터 추가
-        // 2. 리디렉션 후 로컬 스토리지에 프리미엄 구매 정보 저장
-        // 3. 프리미엄 택시로 게임 시작
+        if (this.isPremium) {
+          // 이미 구매한 경우 프리미엄 택시로 시작
+          this.hide();
+          this.onStartGame(true);
+        } else {
+          // 구매 페이지로 이동
+          // 성공 시 현재 URL + ?payment_success=true로 리디렉션되도록 설정
+          const successUrl = `${window.location.href}${
+            window.location.search ? "&" : "?"
+          }payment_success=true`;
+          window.location.href = `https://buy.stripe.com/여기에_실제_링크_입력?success_url=${encodeURIComponent(
+            successUrl
+          )}`;
+        }
       });
     }
   }
@@ -73,5 +119,9 @@ export class ShopUI {
     if (this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
     }
+  }
+
+  public isPremiumPurchased(): boolean {
+    return this.isPremium;
   }
 }

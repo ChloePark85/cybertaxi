@@ -3,6 +3,7 @@ export class GameUI {
   private scoreElement: HTMLDivElement;
   private timerElement: HTMLDivElement;
   private messageElement: HTMLDivElement;
+  private premiumBadge: HTMLDivElement | null = null;
 
   constructor() {
     // 메인 컨테이너
@@ -118,5 +119,29 @@ export class GameUI {
     setTimeout(() => {
       this.messageElement.style.opacity = "0";
     }, 2000);
+  }
+
+  public showPremiumStatus(isPremium: boolean): void {
+    if (isPremium) {
+      if (!this.premiumBadge) {
+        this.premiumBadge = document.createElement("div");
+        this.premiumBadge.style.position = "fixed";
+        this.premiumBadge.style.top = "10px";
+        this.premiumBadge.style.right = "10px";
+        this.premiumBadge.style.padding = "5px 10px";
+        this.premiumBadge.style.background = "#2196F3";
+        this.premiumBadge.style.color = "white";
+        this.premiumBadge.style.borderRadius = "5px";
+        this.premiumBadge.style.fontFamily =
+          "'Press Start 2P', system-ui, sans-serif";
+        this.premiumBadge.style.fontSize = "12px";
+        this.premiumBadge.style.boxShadow = "0 0 10px rgba(33, 150, 243, 0.5)";
+        this.premiumBadge.innerHTML = "🏎️ PREMIUM";
+        document.body.appendChild(this.premiumBadge);
+      }
+    } else if (this.premiumBadge && this.premiumBadge.parentNode) {
+      this.premiumBadge.parentNode.removeChild(this.premiumBadge);
+      this.premiumBadge = null;
+    }
   }
 }
