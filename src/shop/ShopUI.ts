@@ -8,7 +8,7 @@ export class ShopUI {
     this.onStartGame = onStartGame;
 
     // 개발 환경에서 테스트 모드 활성화 (배포 시 제거)
-    const isTestMode = true; // 테스트 시 true로 설정
+    const isTestMode = false; // 테스트 시 true로 설정
 
     if (isTestMode) {
       this.isPremium = true;

@@ -48,9 +48,6 @@ export class Passenger {
 
     this.passenger.add(body);
     this.passenger.position.copy(this.position);
-
-    // 디버그용 로그
-    console.log("승객 생성 위치:", this.position);
   }
 
   private createDestinationMarker(): void {

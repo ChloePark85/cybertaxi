@@ -92,12 +92,5 @@ export class Minimap {
       this.scene.add(dot);
     }
     dot.position.set(position.x * this.mapScale, 0, position.z * this.mapScale);
-
-    // 디버그용 로그
-    console.log(
-      `Updating ${name} dot at:`,
-      position.x * this.mapScale,
-      position.z * this.mapScale
-    );
   }
 }
